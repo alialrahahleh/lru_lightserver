@@ -21,8 +21,7 @@ class Cache {
         if(size == limit) {
             cleanUp();
         }
-        Item *exist = (key in list);
-        if (exist is null) {
+        if (!exists(key)) {
             lru.insertFront(key);
             size++;
         }
@@ -39,10 +38,20 @@ class Cache {
         list.remove(last);
         size--;
     }
+    string getOr(string key, string def) {
+        if(exists(key)) {
+            return get(key);
+        }
+        return def;
+    }
     string get(string key) { 
         lru.linearRemoveElement(key);
         lru.insertFront(key);
         return list[key].value;
+    }
+    bool exists(string key) {
+        Item *exist = (key in list);
+        return exist !is null;
     }
     void dump() {
         writeln("Dumping values ");
@@ -83,5 +92,4 @@ class Cache {
         cache3.add("ali", "koko");
         assert(equal(cache3.lru[], ["ali"]));  
     }
-
 }

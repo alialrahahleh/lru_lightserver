@@ -19,6 +19,7 @@ struct ErrorMessage  {
     static error_parsing_command =  "Error Parsing Command";
     static cmd_not_found = "Command not found";
     static argument_missing = "Arguemnt not complete";
+    static item_doesnt_exits = "ITEM_DOESNT_EXISTS";
 };
 
 enum MAX_CONNECTIONS = 60;
@@ -36,7 +37,8 @@ string commandParser (string cmdList, Cache cache, ref Array!string results) {
                 if(list.length < 2) {
                     return ErrorMessage.argument_missing;
                 }
-                results.insertBack(cache.get(list[1]));
+                results.insertBack(cache.getOr(list[1],
+                            ErrorMessage.item_doesnt_exits));
                 break;
             case "add":
                 if(list.length < 3) {
