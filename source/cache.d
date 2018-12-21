@@ -91,5 +91,15 @@ class Cache {
         cache3.get("ali");
         cache3.add("ali", "koko");
         assert(equal(cache3.lru[], ["ali"]));  
+
+        Cache cache4 = new Cache(3);
+        cache4.add("ali", "koko"); 
+        assert(cache4.exists("ali") == true);
+        assert(cache4.exists("doesntexists") == false);
+        // return value if key exists
+        assert(cache4.getOr("ali", "someDefault") == "koko");
+        // return default if key doesn't exists
+        assert(cache4.getOr("koko", "someDefault") == "someDefault");
     }
+
 }
