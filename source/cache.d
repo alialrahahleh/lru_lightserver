@@ -1,41 +1,47 @@
 import std.container : DList;
 import std.stdio;
 
+import dlist: CDList, Item;
 
-struct Item {
-    string value;
-}
+
 class Cache {
+
     private:
+
     Item[string] list;
-    private size_t limit;
-    auto lru = DList!string();
+    CDList lru;
+    size_t limit;
     auto size = 0;
+
     public: 
 
     this(size_t limit) {
         this.limit = limit;
+        this.lru = new CDList();
     }
 
     void add(string key, string value) {
         if(size == limit) {
             cleanUp();
         }
-        if (!exists(key)) {
-            lru.insertFront(key);
-            size++;
-        }
         Item item;
-        item.value = value; 
-        list[key] = item;
+        if (!exists(key)) {
+            item = new Item(value, key);
+            list[key] = item;
+            lru.push(item);
+        } else {
+            item = list[key];
+            item.value = value;
+        }
+        size++;
     }
     void cleanUp() {
-        if (lru.empty) {
+        if (lru.empty()) {
             return;
         }
-        string last = lru.back();
-        lru.removeBack();
-        list.remove(last);
+        auto leastUsed = lru.front();
+        lru.remove(leastUsed);
+        list.remove(leastUsed.key);
         size--;
     }
     string getOr(string key, string def) {
@@ -45,24 +51,18 @@ class Cache {
         return def;
     }
     string get(string key) { 
-        lru.linearRemoveElement(key);
-        lru.insertFront(key);
+        lru.remove(list[key]);
+        lru.push(list[key]);
         return list[key].value;
     }
     bool exists(string key) {
         Item *exist = (key in list);
         return exist !is null;
     }
-    void dump() {
-        writeln("Dumping values ");
-        foreach(string item; lru) {
-            writeln("Item in cache is ", item);
-        }
-        writeln("--------------------------------------");
-    }
     unittest 
     {
         import std.algorithm.comparison: equal;
+
         Cache cache = new Cache(3);
         cache.add("ali", "koko");
         cache.add("ali2", "koko");
@@ -70,17 +70,17 @@ class Cache {
         cache.get("ali");
         cache.get("ali3");
         cache.add("ali4", "koko");
-        assert(equal(cache.lru[], ["ali4", "ali3", "ali"]));
+        assert(equal(cache.lru.keys(), ["ali", "ali3", "ali4"]));  
 
         Cache cache2 = new Cache(3);
-        cache2.add("ali", "koko");
-        cache2.add("ali2", "koko");
-        cache2.add("ali3", "koko");
-        cache2.get("ali");
-        cache2.get("ali3");
-        cache2.get("ali");
-        cache2.add("ali4", "koko");
-        assert(equal(cache2.lru[], ["ali4", "ali", "ali3"])); 
+        cache2.add("c_2_1", "koko");
+        cache2.add("c_2_2", "koko");
+        cache2.add("c_2_3", "koko");
+        cache2.get("c_2_1");
+        cache2.get("c_2_2");
+        cache2.get("c_2_3");
+        cache2.add("c_2_4", "koko");
+        assert(equal(cache2.lru.keys(), ["c_2_2", "c_2_3", "c_2_4"])); 
 
         Cache cache3 = new Cache(3);
         cache3.add("ali", "koko");
@@ -90,7 +90,7 @@ class Cache {
         cache3.get("ali");
         cache3.get("ali");
         cache3.add("ali", "koko");
-        assert(equal(cache3.lru[], ["ali"]));  
+        assert(equal(cache3.lru.keys(), ["ali"]));  
 
         Cache cache4 = new Cache(3);
         cache4.add("ali", "koko"); 
