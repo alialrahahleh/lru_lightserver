@@ -25,7 +25,7 @@ struct ErrorMessage  {
 enum MAX_CONNECTIONS = 60;
 
 string commandParser (string cmdList, Cache cache, ref Array!string results) {
-    import std.string: lineSplitter;
+    import std.string: lineSplitter, chomp;
     foreach(string command; cmdList.lineSplitter()) {
         string[] list = split(command, ":");
         if(list.length < 1)
@@ -55,6 +55,9 @@ string commandParser (string cmdList, Cache cache, ref Array!string results) {
 
 void main()
 {
+    import std.algorithm: cmp;
+    import std.string: chomp;
+
     ushort port = 4444;
     auto listener = new TcpSocket();
     immutable size_t cache_max_size = 1000;
@@ -79,16 +82,22 @@ void main()
                 if (dataLength == Socket.ERROR) {
                     writeln("Connection Error.");
                 } else if (dataLength > 0) {
-                    string item = to!string(buf[0..dataLength]);
+                    string item = chomp(to!string(buf[0..dataLength]));
+                    if(cmp(item, "close") == 0) {
+                        reads[i].close();
+                        reads = reads.remove(i);
+                        i--; 
+                        break;
+                    }
                     auto result =  make!(Array!string)();
                     commandParser(item, cache, result);
                     foreach(string t; result) {
                         reads[i].send(t);
                     }
+                } else {
+                    reads[i].close();
+                    reads = reads.remove(i);
                 }
-                reads[i].close();
-                reads = reads.remove(i);
-                i--;
                 writefln("Total connections: %d", reads.length);
             }
         }
