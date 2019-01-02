@@ -60,11 +60,11 @@ void main()
 
     ushort port = 4444;
     auto listener = new TcpSocket();
-    immutable size_t cache_max_size = 1000;
+    immutable size_t cache_max_size = 999999;
     listener.blocking = false;
     listener.bind(new InternetAddress(port));
     listener.listen(MAX_CONNECTIONS);
-    Cache cache = new Cache(1000);
+    Cache cache = new Cache(cache_max_size);
 
 
     auto socketSet = new SocketSet(MAX_CONNECTIONS + 1);
